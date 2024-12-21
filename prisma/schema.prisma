@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Measurement {
+  Id                String              @id @default(uuid())
+  Name              String
+  ConversionFactor  Decimal
+  BaseUnit          String
+  CreatedAt         DateTime            @default(now())
+  UpdatedAt         DateTime            @updatedAt
+  ShippingOrderItem ShippingOrderItem[]
+}
+
+model ShippingOrder {
+  Id                     String                  @id @default(uuid())
+  CreatedAt              DateTime                @default(now())
+  UpdatedAt              DateTime                @updatedAt
+  ShippingOrderConsignor ShippingOrderConsignor?
+  ShippingOrderConsignee ShippingOrderConsignee?
+  ShippingOrderItem      ShippingOrderItem[]
+}
+
+model ShippingOrderConsignor {
+  Id              String        @id @default(uuid())
+  CreatedAt       DateTime      @default(now())
+  UpdatedAt       DateTime      @updatedAt
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
+  ShippingOrderId String        @unique
+}
+
+model ShippingOrderConsignee {
+  Id              String        @id @default(uuid())
+  CreatedAt       DateTime      @default(now())
+  UpdatedAt       DateTime      @updatedAt
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
+  ShippingOrderId String        @unique
+}
+
+model ShippingOrderItem {
+  Id              String        @id @default(uuid())
+  Quantity        Float
+  CreatedAt       DateTime      @default(now())
+  UpdatedAt       DateTime      @updatedAt
+  Measurement     Measurement   @relation(fields: [MeasurementId], references: [Id])
+  MeasurementId   String
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
+  ShippingOrderId String
+}

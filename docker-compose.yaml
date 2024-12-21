@@ -1,0 +1,29 @@
+services:
+  cargo-api:
+    build: .
+    container_name: "cargo-api"
+    environment:
+      - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "${PORT}:${PORT}"
+    restart: always
+    depends_on:
+      - sql-server
+
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: "sql-server"
+    environment:
+      - ACCEPT_EULA=y
+      - SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=Express
+    ports:
+      - "1435:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+volumes:
+  sql_data:
+    driver: local
