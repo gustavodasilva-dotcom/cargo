@@ -6,9 +6,8 @@ eslint.config.mjs
 package-lock.json
 package.json
 
-docker-compose.yaml
-README.md
-
 *.sql
 *.toml
 *.prisma
+*.yaml
+*.md

@@ -1,5 +1,5 @@
 const requestLogger = function (req, _, next) {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`[server] ${req.method} ${req.path}`);
   next();
 };
 

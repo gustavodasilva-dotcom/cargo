@@ -5,6 +5,7 @@ const errorLogger = require('./middlewares/errorLogger');
 const express = require('express');
 const requestLogger = require('./middlewares/requestLogger');
 const unmatchedRouteHandler = require('./middlewares/unmatchedRouteHandler');
+const { startConsumers } = require('./rabbitmq/consumer');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,13 @@ app.use(unmatchedRouteHandler);
 app.use(errorLogger);
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at port ${port}`);
-});
+startConsumers()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`[server] Server is running at port ${port}.`);
+    });
+  })
+  .catch((err) => {
+    console.error('[server] Failed to start application:', err);
+    process.exit(1);
+  });

@@ -66,7 +66,7 @@ const measurementData = [
 ];
 
 async function main() {
-  console.log('Start seeding...');
+  console.log('[server] Start seeding...');
   const upsertPromises = measurementData.map(
     async ({ id, name, conversionFactor, baseUnit }) => {
       const data = {
@@ -82,15 +82,15 @@ async function main() {
     }
   );
   await Promise.all(upsertPromises);
-  console.log('Seeding finished.');
+  console.log('[server] Seeding finished.');
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
-    console.error(e);
+  .catch(async (error) => {
+    console.error("Failed to start SQL Server connection through Prisma:", error);
     await prisma.$disconnect();
     process.exit(1);
   });
