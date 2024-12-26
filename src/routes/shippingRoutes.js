@@ -16,6 +16,8 @@ router.post(
   shippingController.handleCreateShippingOrder
 );
 
+router.patch('/prepare-to-ship/:id', shippingController.handlePrepareToShip);
+
 router.delete('/delete/:id', shippingController.handleDeleteShippingOrder);
 
 module.exports = router;

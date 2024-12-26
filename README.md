@@ -1,5 +1,7 @@
 # cargo
 
+The purpose of this project is for _studying_ only. Concepts like dockerizing and pub/sub messaging exchange are being practice in a Node.js environment.
+
 ## Environment variables:
 - **`PORT`**: The port on which the application will run.
 - **`NODE_ENV`**: The environment in which the application is running (`development`, `homolog`, or `production`).
@@ -8,7 +10,6 @@
 - **`DATABASE_URL`**: The connection string to Microsoft SQL Server instance.
   - If running the application locally, use a local instance.
   - If running through Docker, use the SQL Server container instance.
-
 The password in the connection string should match the one set in the `MSSQL_SA_PASSWORD` environment variable.
 
 ## Setting up SQL Server (Docker)

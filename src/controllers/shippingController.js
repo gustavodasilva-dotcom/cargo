@@ -1,6 +1,10 @@
 const { Prisma, PrismaClient } = require('@prisma/client');
 const { SHIPPING_PARTIES } = require('../enums/shippingParties');
+const { SHIPPING_STATUS } = require('../enums/shippingStatus');
 const { distinct } = require('../utils/arrayUtils');
+const { generateRandomString } = require('../utils/stringUtils');
+const { publishToQueue } = require('../rabbitmq/publisher');
+const { queues } = require('../rabbitmq/queues');
 
 const prisma = new PrismaClient();
 
@@ -133,6 +137,40 @@ const handleCreateShippingOrder = async function (req, res) {
   });
 };
 
+const handlePrepareToShip = async function (req, res) {
+  const { id } = req.params;
+
+  const shippingOrder = await prisma.shippingOrder.findFirst({
+    where: { Id: id }
+  });
+
+  if (!shippingOrder) {
+    return res.status(404).json({
+      title: 'Not Found',
+      detail: `Not shipping order found regarding the id ${id}.`,
+      instance: req.originalUrl,
+      status: 404
+    });
+  }
+
+  const trackingCode = `TC${new Date().getFullYear()}${generateRandomString(11)}`;
+
+  await prisma.shippingOrder.update({
+    where: { Id: id },
+    data: { TrackingCode: trackingCode }
+  });
+
+  publishToQueue(queues.PREPARE_TO_SHIP, {
+    shipping_order_id: shippingOrder.Id
+  });
+  publishToQueue(queues.UPDATE_TRACKING, {
+    shipping_order_id: shippingOrder.Id,
+    shipping_status: SHIPPING_STATUS.IN_PREPARATION
+  });
+
+  res.status(200).json({ tracking_code: trackingCode });
+};
+
 const handleDeleteShippingOrder = async function (req, res) {
   const { id } = req.params;
 
@@ -160,5 +198,6 @@ module.exports = {
   handleGetAllShippingOrders,
   handleGetShippingOrderById,
   handleCreateShippingOrder,
+  handlePrepareToShip,
   handleDeleteShippingOrder
 };
