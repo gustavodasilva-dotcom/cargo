@@ -8,7 +8,8 @@
 - **`DATABASE_URL`**: The connection string to Microsoft SQL Server instance.
   - If running the application locally, use a local instance.
   - If running through Docker, use the SQL Server container instance.
-  The password in the connection string should match the one set in the `MSSQL_SA_PASSWORD` environment variable.
+
+The password in the connection string should match the one set in the `MSSQL_SA_PASSWORD` environment variable.
 
 ## Setting up SQL Server (Docker)
 To setup the SQL Server container, it's necessary to install the `sqlcmd` utility to execute SQL scripts through the command line. To do this, we'll install the utility inside the SQL Server container. With the container running (`docker compose up -d`), execute the following command:

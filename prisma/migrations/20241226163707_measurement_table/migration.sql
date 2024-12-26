@@ -4,10 +4,10 @@ BEGIN TRAN;
 
 -- CreateTable
 CREATE TABLE [dbo].[Measurement] (
-    [Id] NVARCHAR(1000) NOT NULL,
-    [Name] NVARCHAR(1000) NOT NULL,
+    [Id] UNIQUEIDENTIFIER NOT NULL,
+    [Name] NVARCHAR(100) NOT NULL,
     [ConversionFactor] DECIMAL(32,16) NOT NULL,
-    [BaseUnit] NVARCHAR(1000) NOT NULL,
+    [BaseUnit] NVARCHAR(50) NOT NULL,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [Measurement_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     [UpdatedAt] DATETIME2 NOT NULL,
     CONSTRAINT [Measurement_pkey] PRIMARY KEY CLUSTERED ([Id])

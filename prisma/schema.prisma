@@ -8,52 +8,49 @@ datasource db {
 }
 
 model Measurement {
-  Id                String              @id @default(uuid())
-  Name              String
-  ConversionFactor  Decimal
-  BaseUnit          String
-  CreatedAt         DateTime            @default(now())
-  UpdatedAt         DateTime            @updatedAt
-  ShippingOrderItem ShippingOrderItem[]
+  Id               String              @id @default(uuid()) @db.UniqueIdentifier()
+  Name             String              @db.NVarChar(100)
+  ConversionFactor Decimal
+  BaseUnit         String              @db.NVarChar(50)
+  CreatedAt        DateTime            @default(now())
+  UpdatedAt        DateTime            @updatedAt
+  Items            ShippingOrderItem[]
 }
 
 model ShippingOrder {
-  Id                     String                  @id @default(uuid())
-  Status                 Int                     @default(1)
-  ShippedAt              DateTime?
-  DeliveredAt            DateTime?
-  CreatedAt              DateTime                @default(now())
-  UpdatedAt              DateTime                @updatedAt
-  ShippingOrderConsignor ShippingOrderConsignor?
-  ShippingOrderConsignee ShippingOrderConsignee?
-  ShippingOrderItem      ShippingOrderItem[]
+  Id           String                 @id @default(uuid()) @db.UniqueIdentifier()
+  Status       Int                    @default(1)
+  TrackingCode String?                @db.NVarChar(17)
+  ShippedAt    DateTime?
+  DeliveredAt  DateTime?
+  CreatedAt    DateTime               @default(now())
+  UpdatedAt    DateTime               @updatedAt
+  Parties      ShippingOrderParties[]
+  Items        ShippingOrderItem[]
 }
 
-model ShippingOrderConsignor {
-  Id              String        @id @default(uuid())
+model ShippingOrderParties {
+  Id              String        @id @default(uuid()) @db.UniqueIdentifier()
+  PartyType       Int           @default(1)
+  Name            String        @db.NVarChar(255)
+  Email           String        @db.NVarChar(320)
+  Cellphone       String        @db.NVarChar(15)
+  Address         String        @db.NVarChar(255)
   CreatedAt       DateTime      @default(now())
   UpdatedAt       DateTime      @updatedAt
-  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
-  ShippingOrderId String        @unique
-}
-
-model ShippingOrderConsignee {
-  Id              String        @id @default(uuid())
-  CreatedAt       DateTime      @default(now())
-  UpdatedAt       DateTime      @updatedAt
-  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
-  ShippingOrderId String        @unique
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id], onDelete: Cascade)
+  ShippingOrderId String        @db.UniqueIdentifier()
 }
 
 model ShippingOrderItem {
-  Id              String        @id @default(uuid())
-  Title           String
-  Barcode         String
+  Id              String        @id @default(uuid()) @db.UniqueIdentifier()
+  Title           String        @db.NVarChar(255)
+  Barcode         String        @db.NVarChar(48)
   Quantity        Float
   CreatedAt       DateTime      @default(now())
   UpdatedAt       DateTime      @updatedAt
   Measurement     Measurement   @relation(fields: [MeasurementId], references: [Id])
-  MeasurementId   String
+  MeasurementId   String        @db.UniqueIdentifier()
   ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id], onDelete: Cascade)
-  ShippingOrderId String
+  ShippingOrderId String        @db.UniqueIdentifier()
 }

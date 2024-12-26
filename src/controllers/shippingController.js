@@ -1,4 +1,5 @@
 const { Prisma, PrismaClient } = require('@prisma/client');
+const { SHIPPING_PARTIES } = require('../enums/shippingParties');
 const { distinct } = require('../utils/arrayUtils');
 
 const prisma = new PrismaClient();
@@ -6,21 +7,26 @@ const prisma = new PrismaClient();
 const handleGetAllShippingOrders = async function (_req, res) {
   const shippingOrders = await prisma.shippingOrder.findMany();
   if (shippingOrders.length === 0) return res.sendStatus(204);
+
   const result = shippingOrders.map((order) => {
     return {
       id: order.Id,
-      status: order.Status
+      status: order.Status,
+      tracking_code: order.TrackingCode
     };
   });
+
   res.json([...result]);
 };
 
 const handleGetShippingOrderById = async function (req, res) {
   const { id } = req.params;
+
   const shippingOrder = await prisma.shippingOrder.findFirst({
     where: { Id: id },
-    include: { ShippingOrderItem: true }
+    include: { Parties: true, Items: true }
   });
+
   if (!shippingOrder) {
     return res.status(404).json({
       title: 'Not Found',
@@ -29,12 +35,30 @@ const handleGetShippingOrderById = async function (req, res) {
       status: 404
     });
   }
+
+  const shippingOrderParties = shippingOrder.Parties.map((party) => {
+    return {
+      id: party.Id,
+      name: party.Name,
+      email: party.Email,
+      cellphone: party.Cellphone,
+      address: party.Address
+    };
+  });
+
   res.json({
     id: shippingOrder.Id,
     status: shippingOrder.Status,
+    tracking_code: shippingOrder.TrackingCode,
     delivered_at: shippingOrder.DeliveredAt,
     shipped_at: shippingOrder.ShippedAt,
-    items: shippingOrder.ShippingOrderItem.map((item) => {
+    senders: shippingOrderParties.filter(
+      (party) => party.PartyType === SHIPPING_PARTIES.SENDER
+    ),
+    recipients: shippingOrderParties.filter(
+      (party) => party.PartyType === SHIPPING_PARTIES.RECIPIENT
+    ),
+    items: shippingOrder.Items.map((item) => {
       return {
         id: item.Id,
         title: item.Title,
@@ -47,22 +71,28 @@ const handleGetShippingOrderById = async function (req, res) {
 };
 
 const handleCreateShippingOrder = async function (req, res) {
-  const { items } = req.body;
+  const { senders, recipients, items } = req.body;
+
   const measurementIds = [...items]
     .map((item) => item['measurement_id'])
     .filter(distinct);
+
   const result = await prisma.$queryRaw`
     SELECT COUNT(*) AS Count
     FROM Measurement
     WHERE Id IN(${Prisma.join(measurementIds)})
   `;
+
   if (!result || !Array.isArray(result)) {
     throw new Error('Error while executing query at the database.');
   }
+
   const count = result[0]?.Count;
+
   if (!count || isNaN(count)) {
     throw new Error('The result from the query could not be processed.');
   }
+
   if (count !== measurementIds.length) {
     return res.status(400).json({
       title: 'Bad Request',
@@ -71,9 +101,21 @@ const handleCreateShippingOrder = async function (req, res) {
       status: 400
     });
   }
+
   const shippingOrder = await prisma.shippingOrder.create({
     data: {
-      ShippingOrderItem: {
+      Parties: {
+        create: [...senders, ...recipients].map((party) => {
+          return {
+            PartyType: party.type,
+            Name: party.name,
+            Email: party.email,
+            Cellphone: party.cellphone,
+            Address: party.address
+          };
+        })
+      },
+      Items: {
         create: [...items].map((item) => {
           return {
             Title: item.title,
@@ -85,6 +127,7 @@ const handleCreateShippingOrder = async function (req, res) {
       }
     }
   });
+
   res.status(201).json({
     shipping_order_id: shippingOrder.Id
   });
@@ -92,9 +135,11 @@ const handleCreateShippingOrder = async function (req, res) {
 
 const handleDeleteShippingOrder = async function (req, res) {
   const { id } = req.params;
+
   const shippingOrder = await prisma.shippingOrder.findFirst({
     where: { Id: id }
   });
+
   if (!shippingOrder) {
     return res.status(404).json({
       title: 'Not Found',
@@ -103,9 +148,11 @@ const handleDeleteShippingOrder = async function (req, res) {
       status: 404
     });
   }
+
   await prisma.shippingOrder.delete({
     where: { Id: id }
   });
+
   res.sendStatus(204);
 };
 
