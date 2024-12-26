@@ -90,7 +90,10 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
-    console.error("Failed to start SQL Server connection through Prisma:", error);
+    console.error(
+      'Failed to start SQL Server connection through Prisma:',
+      error
+    );
     await prisma.$disconnect();
     process.exit(1);
   });

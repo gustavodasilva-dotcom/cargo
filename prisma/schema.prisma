@@ -47,12 +47,13 @@ model ShippingOrderConsignee {
 
 model ShippingOrderItem {
   Id              String        @id @default(uuid())
+  Title           String
   Barcode         String
   Quantity        Float
   CreatedAt       DateTime      @default(now())
   UpdatedAt       DateTime      @updatedAt
   Measurement     Measurement   @relation(fields: [MeasurementId], references: [Id])
   MeasurementId   String
-  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id])
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id], onDelete: Cascade)
   ShippingOrderId String
 }

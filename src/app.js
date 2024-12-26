@@ -4,8 +4,8 @@ const errorHandler = require('./middlewares/errorHandler');
 const errorLogger = require('./middlewares/errorLogger');
 const express = require('express');
 const requestLogger = require('./middlewares/requestLogger');
-const unmatchedRouteHandler = require('./middlewares/unmatchedRouteHandler');
 const { startConsumers } = require('./rabbitmq/consumer');
+const unmatchedRouteHandler = require('./middlewares/unmatchedRouteHandler');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -18,6 +18,7 @@ app.use(requestLogger);
 const API_PREFIX = '/api';
 
 app.use(`${API_PREFIX}/measurements`, require('./routes/measurementRoutes'));
+app.use(`${API_PREFIX}/shipping`, require('./routes/shippingRoutes'));
 
 app.use(unmatchedRouteHandler);
 app.use(errorLogger);

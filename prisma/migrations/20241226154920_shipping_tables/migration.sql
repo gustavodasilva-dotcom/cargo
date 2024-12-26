@@ -36,6 +36,7 @@ CREATE TABLE [dbo].[ShippingOrderConsignee] (
 -- CreateTable
 CREATE TABLE [dbo].[ShippingOrderItem] (
     [Id] NVARCHAR(1000) NOT NULL,
+    [Title] NVARCHAR(1000) NOT NULL,
     [Barcode] NVARCHAR(1000) NOT NULL,
     [Quantity] FLOAT(53) NOT NULL,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [ShippingOrderItem_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
@@ -55,7 +56,7 @@ ALTER TABLE [dbo].[ShippingOrderConsignee] ADD CONSTRAINT [ShippingOrderConsigne
 ALTER TABLE [dbo].[ShippingOrderItem] ADD CONSTRAINT [ShippingOrderItem_MeasurementId_fkey] FOREIGN KEY ([MeasurementId]) REFERENCES [dbo].[Measurement]([Id]) ON DELETE NO ACTION ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[ShippingOrderItem] ADD CONSTRAINT [ShippingOrderItem_ShippingOrderId_fkey] FOREIGN KEY ([ShippingOrderId]) REFERENCES [dbo].[ShippingOrder]([Id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE [dbo].[ShippingOrderItem] ADD CONSTRAINT [ShippingOrderItem_ShippingOrderId_fkey] FOREIGN KEY ([ShippingOrderId]) REFERENCES [dbo].[ShippingOrder]([Id]) ON DELETE CASCADE ON UPDATE CASCADE;
 
 COMMIT TRAN;
 
