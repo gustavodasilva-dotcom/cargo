@@ -1,16 +1,15 @@
 services:
-  cargo-api:
-    build: .
-    container_name: "cargo-api"
+  cargo-mq:
+    container_name: "cargo-mq"
+    image: rabbitmq:3.11.7-management
     environment:
-      - PORT=${PORT}
-      - NODE_ENV=${NODE_ENV}
-      - DATABASE_URL=${DATABASE_URL}
+      - RABBIT_DEFAULT_USER=guest
+      - RABBIT_DEFAULT_PASS=guest
     ports:
-      - "${PORT}:${PORT}"
-    restart: always
-    depends_on:
-      - sql-server
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
   sql-server:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -24,6 +23,22 @@ services:
     volumes:
       - sql_data:/var/opt/mssql
 
+  cargo-api:
+    build: .
+    container_name: "cargo-api"
+    environment:
+      - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "${PORT}:${PORT}"
+    restart: always
+    depends_on:
+      - cargo-mq
+      - sql-server
+
 volumes:
   sql_data:
+    driver: local
+  rabbitmq_data:
     driver: local
