@@ -1,12 +1,23 @@
 const { Prisma, PrismaClient } = require('@prisma/client');
 const { SHIPPING_PARTIES } = require('../enums/shippingParties');
 const { SHIPPING_STATUS } = require('../enums/shippingStatus');
+const { TRACKING_STATUS } = require('../enums/trackingStatus');
 const { distinct } = require('../utils/arrayUtils');
 const { generateRandomString } = require('../utils/stringUtils');
 const { publishToQueue } = require('../rabbitmq/publisher');
 const { queues } = require('../rabbitmq/queues');
 
 const prisma = new PrismaClient();
+
+const formatShippingPartyResponse = function (data) {
+  return {
+    id: data.Id,
+    name: data.Name,
+    email: data.Email,
+    cellphone: data.Cellphone,
+    address: data.Address
+  };
+};
 
 const handleGetAllShippingOrders = async function (_req, res) {
   const shippingOrders = await prisma.shippingOrder.findMany();
@@ -40,28 +51,18 @@ const handleGetShippingOrderById = async function (req, res) {
     });
   }
 
-  const shippingOrderParties = shippingOrder.Parties.map((party) => {
-    return {
-      id: party.Id,
-      name: party.Name,
-      email: party.Email,
-      cellphone: party.Cellphone,
-      address: party.Address
-    };
-  });
-
   res.json({
     id: shippingOrder.Id,
     status: shippingOrder.Status,
     tracking_code: shippingOrder.TrackingCode,
     delivered_at: shippingOrder.DeliveredAt,
     shipped_at: shippingOrder.ShippedAt,
-    senders: shippingOrderParties.filter(
+    senders: shippingOrder.Parties.filter(
       (party) => party.PartyType === SHIPPING_PARTIES.SENDER
-    ),
-    recipients: shippingOrderParties.filter(
+    ).map(formatShippingPartyResponse),
+    recipients: shippingOrder.Parties.filter(
       (party) => party.PartyType === SHIPPING_PARTIES.RECIPIENT
-    ),
+    ).map(formatShippingPartyResponse),
     items: shippingOrder.Items.map((item) => {
       return {
         id: item.Id,
@@ -153,19 +154,31 @@ const handlePrepareToShip = async function (req, res) {
     });
   }
 
+  if (shippingOrder.Status !== SHIPPING_STATUS.CREATED) {
+    return res.status(400).json({
+      title: 'Bad Request',
+      detail: 'This shipping order is already in shipping.',
+      instance: req.originalUrl,
+      status: 400
+    });
+  }
+
   const trackingCode = `TC${new Date().getFullYear()}${generateRandomString(11)}`;
 
   await prisma.shippingOrder.update({
     where: { Id: id },
-    data: { TrackingCode: trackingCode }
+    data: {
+      Status: SHIPPING_STATUS.IN_PREPARATION,
+      TrackingCode: trackingCode
+    }
   });
 
-  publishToQueue(queues.PREPARE_TO_SHIP, {
-    shipping_order_id: shippingOrder.Id
-  });
-  publishToQueue(queues.UPDATE_TRACKING, {
+  await publishToQueue(queues.UPDATE_TRACKING, {
     shipping_order_id: shippingOrder.Id,
-    shipping_status: SHIPPING_STATUS.IN_PREPARATION
+    tracking_status: TRACKING_STATUS.PREPARING_PACKAGE
+  });
+  await publishToQueue(queues.PREPARE_TO_SHIP, {
+    shipping_order_id: shippingOrder.Id
   });
 
   res.status(200).json({ tracking_code: trackingCode });
@@ -184,6 +197,15 @@ const handleDeleteShippingOrder = async function (req, res) {
       detail: `Not shipping order found regarding the id ${id}.`,
       instance: req.originalUrl,
       status: 404
+    });
+  }
+
+  if (shippingOrder.Status !== SHIPPING_STATUS.CREATED) {
+    return res.status(409).json({
+      title: 'Conflict',
+      detail: `This shipping order cannot be deleted, because it's already in shipping.`,
+      instance: req.originalUrl,
+      status: 409
     });
   }
 

@@ -11,7 +11,12 @@ const startConsumers = async function () {
       console.log(`[server] Message received at the queue ${queue}.`);
 
       try {
-        const payload = Buffer.from(message.content).toString();
+        const bufferContent = Buffer.from(message.content);
+        if (bufferContent.length === 0) {
+          throw new Error('The message content is empty.');
+        }
+
+        const payload = bufferContent.toString();
 
         const handler = require(`./handlers/${queue}-handler`);
         if (
@@ -20,6 +25,8 @@ const startConsumers = async function () {
           typeof handler.handle === 'function'
         ) {
           handler.handle(payload);
+        } else {
+          throw new Error(`The queue ${queue} does not have a handler.`);
         }
 
         console.log(`[server] Message processed at the queue ${queue}.`);

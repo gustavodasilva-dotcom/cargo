@@ -18,15 +18,16 @@ model Measurement {
 }
 
 model ShippingOrder {
-  Id           String                 @id @default(uuid()) @db.UniqueIdentifier()
-  Status       Int                    @default(1)
-  TrackingCode String?                @db.NVarChar(17)
-  ShippedAt    DateTime?
-  DeliveredAt  DateTime?
-  CreatedAt    DateTime               @default(now())
-  UpdatedAt    DateTime               @updatedAt
-  Parties      ShippingOrderParties[]
-  Items        ShippingOrderItem[]
+  Id              String                         @id @default(uuid()) @db.UniqueIdentifier()
+  Status          Int                            @default(1)
+  TrackingCode    String?                        @db.NVarChar(17)
+  ShippedAt       DateTime?
+  DeliveredAt     DateTime?
+  CreatedAt       DateTime                       @default(now())
+  UpdatedAt       DateTime                       @updatedAt
+  Parties         ShippingOrderParties[]
+  Items           ShippingOrderItem[]
+  TrackingHistory ShippingOrderTrackingHistory[]
 }
 
 model ShippingOrderParties {
@@ -51,6 +52,15 @@ model ShippingOrderItem {
   UpdatedAt       DateTime      @updatedAt
   Measurement     Measurement   @relation(fields: [MeasurementId], references: [Id])
   MeasurementId   String        @db.UniqueIdentifier()
+  ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id], onDelete: Cascade)
+  ShippingOrderId String        @db.UniqueIdentifier()
+}
+
+model ShippingOrderTrackingHistory {
+  Id              String        @id @default(uuid()) @db.UniqueIdentifier()
+  Type            Int           @default(1)
+  Description     String        @db.NVarChar(255)
+  CreatedAt       DateTime      @default(now())
   ShippingOrder   ShippingOrder @relation(fields: [ShippingOrderId], references: [Id], onDelete: Cascade)
   ShippingOrderId String        @db.UniqueIdentifier()
 }

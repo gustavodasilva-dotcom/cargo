@@ -19,6 +19,7 @@ const API_PREFIX = '/api';
 
 app.use(`${API_PREFIX}/measurements`, require('./routes/measurementRoutes'));
 app.use(`${API_PREFIX}/shipping`, require('./routes/shippingRoutes'));
+app.use(`${API_PREFIX}/tracking`, require('./routes/trackingRoutes'));
 
 app.use(unmatchedRouteHandler);
 app.use(errorLogger);
